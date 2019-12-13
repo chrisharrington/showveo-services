@@ -24,7 +24,7 @@
     "install": "^0.12.1",
     "module-alias": "^2.1.0",
     "mongodb": "^3.3.3",
-    "npm": "^6.12.0",
+    "npm": "^6.13.4",
     "recursive-readdir": "^2.2.2",
     "request": "^2.88.0",
     "uuid": "^3.3.2"
