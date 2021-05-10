@@ -29,12 +29,13 @@ export default class Converter {
                 file = new File(media.path, location),
                 result: EncodingResult = await this.encoder.run(file);
 
+            media.conversionStatus = result.conversion === undefined ? Status.Processed : Status.Failed;
+            media.conversionError = result.conversion === undefined ? null : result.conversion as Error;
+            media.path = location;
+
             switch (message.type) {
                 case MessageType.Movie:
                     const movie = media as Movie;
-                    movie.conversionStatus = result.conversion === undefined ? Status.Processed : Status.Failed;
-                    movie.conversionError = result.conversion === undefined ? null : result.conversion as Error;
-                    movie.path = location;
                     await MovieService.updateOne(movie);
 
                     if (!result.subtitles) {
@@ -45,9 +46,6 @@ export default class Converter {
                     break;
                 case MessageType.Episode:
                     const episode = media as Episode;
-                    episode.conversionStatus = result.conversion === undefined ? Status.Processed : Status.Failed;
-                    episode.conversionError = result.conversion === undefined ? null : result.conversion as Error;
-                    episode.path = location;
                     await EpisodeService.updateOne(episode);
 
                     if (!result.subtitles) {

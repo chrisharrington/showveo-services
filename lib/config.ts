@@ -1,7 +1,7 @@
 export default class Config {
     static enabled = {
         api: true,
-        converter: false,
+        converter: true,
         indexer: true,
         metadata: true,
         subtitler: false
@@ -23,4 +23,6 @@ export default class Config {
     static imagePath: string = '/data/images/';
 
     static playMovieUrl: string = 'https://api.showveo.com/data/movies/play/{year}/{name}';
+
+    static streamDelay: number = 1000;
 }

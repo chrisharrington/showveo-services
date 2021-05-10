@@ -27,7 +27,9 @@ export enum Status {
     Unprocessed = 'unprocessed',
     Queued = 'queued',
     Processed = 'processed',
-    Failed = 'failed'
+    Failed = 'failed',
+    OnDemand = 'on-demand',
+    Error = 'error'
 }
 
 export enum StreamType {

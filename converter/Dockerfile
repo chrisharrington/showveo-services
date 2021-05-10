@@ -2,8 +2,6 @@ FROM nvidia/cuda:latest
 WORKDIR /app
 
 ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV CUDA_VERSION=10.2.89
-ENV CUDA_PKG_VERSION 10-2=$CUDA_VERSION-1
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=video,compute,utility
@@ -23,7 +21,7 @@ RUN git clone https://github.com/FFmpeg/nv-codec-headers.git && \
 # Install FFMPEG
 RUN git clone https://git.ffmpeg.org/ffmpeg.git && \
     cd ffmpeg && \
-    ./configure --enable-libzvbi --enable-libmp3lame --enable-cuda --enable-cuvid --enable-nvenc --enable-nonfree --enable-libnpp --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 && \
+    ./configure --enable-libzvbi --enable-libmp3lame --enable-cuda --enable-cuvid --enable-nvdec --enable-nvenc --enable-nonfree --enable-libnpp --extra-cflags=-I/usr/local/cuda/include  --extra-ldflags=-L/usr/local/cuda/lib64 && \
     make -j 4 && \
     make install && \
     cd ..

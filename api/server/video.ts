@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import * as fs from 'fs';
+import delay from 'delay-stream';
+
+import Config from '@lib/config';
 
 const FfmpegCommand = require('fluent-ffmpeg');
 
@@ -34,8 +37,6 @@ export default class Video {
     public static stream(request: Request, response: Response, path: string) {
         this.abort();
 
-        const stats = fs.statSync(path);
-        // response.set('Content-Length', stats.size.toString());
         response.set('Content-Type', 'video/mp4');
 
         const command = new FfmpegCommand()
@@ -61,7 +62,9 @@ export default class Video {
             .on('end', () => console.log('[api] Encoder finished.'))
             .on('stderr', line => console.log(line));
 
-        command.stream(response, { end: true });
+        command.stream(delay(Config.streamDelay)).pipe(response, { end: true });
+
+        // command.stream(response, { end: true });
 
         this.command = command;
     }

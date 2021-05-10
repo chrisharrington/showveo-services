@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import * as ffprobe from 'ffprobe';
+import ffprobe from 'ffprobe';
 import * as path from 'path';
-import * as srt2vtt from 'srt-to-vtt';
+import srt2vtt from 'srt-to-vtt';
 
 import { File, FileState, StreamType } from '@lib/models';
 import { convertingFileName } from '@lib/constants';
@@ -90,6 +90,7 @@ export default class Encoder {
                     );
 
                 command.on('start', () => console.log(`[converter] Converting: ${file.path}`));
+                command.on('stderr', line => console.log(line));
                 command.on('error', error => {
                     console.error(`[converter] Failed to convert ${file.path}.`);
                     resolve(error);

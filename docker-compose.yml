@@ -1,4 +1,4 @@
-version: '2.3'
+version: '3.8'
 services:
 
   transpiler:
@@ -40,19 +40,12 @@ services:
     container_name: showveo-api
     network_mode: host
     restart: unless-stopped
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - /usr/local/cuda:/cuda
       - ~/media:/media
       - ./:/app
     depends_on:
       - database
       - transpiler
-    ports:
-      - 9000:9000
-      - 12000:12000
 
   indexer:
     build:
@@ -70,25 +63,28 @@ services:
     ports:
       - 9001:9001
 
-#   converter:
-#     build:
-#       context: .
-#       dockerfile: ./converter/Dockerfile
-#     container_name: showveo-converter
-#     restart: unless-stopped
-#     runtime: nvidia
-#     environment:
-#       - NVIDIA_VISIBLE_DEVICES=all
-#     volumes:
-#       - /usr/local/cuda:/cuda
-#       - ~/media:/media
-#       - ./:/app
-#     depends_on:
-#       - queue
-#       - database
-#       - transpiler
-#     ports:
-#       - 9002:9002
+  converter:
+    build:
+      context: .
+      dockerfile: ./converter/Dockerfile
+    container_name: showveo-converter
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+    volumes:
+      - ~/media:/media
+      - ./:/app
+    depends_on:
+      - queue
+      - database
+      - transpiler
+    ports:
+      - 9002:9002
 
   metadata:
     build:

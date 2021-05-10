@@ -25,7 +25,7 @@ export default class Server {
         app.use(cors({ origin: 'https://www.showveo.com', credentials: true }));
         // app.use(this.authorize);
         app.use(bodyParser.json());
-        app.use(cookieParser());
+        app.use(cookieParser()); 
         
         app.listen(this.port, () => console.log(`[api] Listening on port ${this.port}...`));
 

@@ -2013,6 +2013,13 @@ define-property@^2.0.2:
     is-descriptor "^1.0.2"
     isobject "^3.0.1"
 
+delay-stream@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/delay-stream/-/delay-stream-0.0.3.tgz#8ce22fc058da016e4104bbfbc2101d91f85b291c"
+  integrity sha1-jOIvwFjaAW5BBLv7whAdkfhbKRw=
+  dependencies:
+    through "~2.1.0"
+
 delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
@@ -7411,6 +7418,11 @@ through@2, "through@>=2.2.7 <3", through@^2.3.6, through@~2.3, through@~2.3.1:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha1-DdTJ/6q8NXlgsbckEV1+Doai4fU=
+
+through@~2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/through/-/through-2.1.0.tgz#ebcae48745ffda088ad6b8a2fe20ef3ce8ee1bcd"
+  integrity sha1-68rkh0X/2giK1rii/iDvPOjuG80=
 
 timed-out@^4.0.0:
   version "4.0.1"
