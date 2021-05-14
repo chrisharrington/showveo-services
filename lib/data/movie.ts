@@ -7,13 +7,18 @@ class MovieService extends Base<Movie> {
         super('movies', { name: 'text' });
     }
 
-    async get() : Promise<Movie[]> {
+    async get(skip: number = 0, count: number = 0) : Promise<Movie[]> {
         let collection = await this.connect();
         return new Promise<Movie[]>((resolve, reject) => {
-            collection.find({}).sort({ name: 1 }).toArray((error, movies) => {
-                if (error) reject(error);
-                else resolve(movies);
-            });
+            collection
+                .find({})
+                .skip(skip)
+                .limit(count || 100000)
+                .sort({ name: 1 })
+                .toArray((error, movies) => {
+                    if (error) reject(error);
+                    else resolve(movies);
+                });
         });
     }
 

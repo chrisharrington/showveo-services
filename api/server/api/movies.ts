@@ -20,11 +20,14 @@ export default class Movies {
         app.post(prefix + '/movies/stop/:year/:name/:device', Middlewares.auth, this.stop.bind(this));
     }
 
-    private static async getMovies(_, response: Response) {
+    private static async getMovies(request: Request, response: Response) {
         console.log('[api] Request received: GET /movies');
 
         try {
-            let movies = await MovieService.get();
+            const skip = parseInt(request.query.skip.toString()),
+                count = parseInt(request.query.count.toString());
+
+            let movies = await MovieService.get(isNaN(skip) ? 0 : skip, isNaN(count) ? 0 : count);
             console.log(`[api] Request succeeded. GET /movies. Found ${movies.length} movies.`);
             response.status(200).send(movies.map(this.sanitize));
         } catch (e) {

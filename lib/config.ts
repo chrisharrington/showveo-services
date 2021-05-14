@@ -1,7 +1,7 @@
 export default class Config {
     static enabled = {
         api: true,
-        converter: true,
+        converter: false,
         indexer: true,
         metadata: true,
         subtitler: false
