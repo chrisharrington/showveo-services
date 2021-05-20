@@ -53,7 +53,7 @@ export default class Devices extends Base {
     }
 
     private static async seek(request: Request, response: Response) {
-
+        await this.sendCommand(request, response, 'seek', (device: Device) => device.seek(request.body.time as number));
     }
 
     private static async getDevice(host: string) : Promise<Device> {

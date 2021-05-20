@@ -1,12 +1,26 @@
 import { Client, DefaultMediaReceiver } from 'castv2-client';
 
 import { Castable } from '@lib/models';
+import { Socket, Message } from '@lib/socket';
 
 interface Application {
     play: () => void;
     pause: () => void;
     stop: () => void;
     seek: (currentTime: number) => void;
+}
+
+interface Status {
+    state: CastState;
+    elapsed: number;
+    duration: number;
+}
+
+enum CastState {
+    Idle = 'IDLE',
+    Paused = 'PAUSED',
+    Playing = 'PLAYING',
+    Buffering = 'BUFFERING'
 }
 
 export default class Device {
@@ -28,35 +42,42 @@ export default class Device {
         return new Promise((resolve, reject) => {
             const client = new Client();
 
-            client.on('error', error => console.log(error));
+            client.on('error', reject);
 
             client.connect(this.host, () => {
                 client.launch(DefaultMediaReceiver, (error, player) => {
                     if (error)
-                        throw new Error(error);       
+                        reject(error);
+                    else {
+                        const message = {
+                            contentId: castable.url,
+                            contentType: 'video/mp4',
+                            streamType: 'BUFFERED',
+                            metadata: {
+                                type: 0,
+                                metadataType: 0,
+                                title: castable.name, 
+                                images: [
+                                    { url: castable.backdrop }
+                                ]
+                            }
+                        };
 
-                    const message = {
-                        contentId: castable.url,
-                        contentType: 'video/mp4',
-                        streamType: 'BUFFERED',
-                        metadata: {
-                            type: 0,
-                            metadataType: 0,
-                            title: castable.name, 
-                            images: [
-                                { url: castable.backdrop }
-                            ]
-                        }
-                    };
+                        player.on('error', reject);
 
-                    player.on('error', reject);
+                        player.on('status', async status => {
+                            Socket.broadcast(new Message('status', {
+                                state: status.playerState,
+                                elapsed: status.currentTime
+                            }));
+                            console.log('status broadcast playerState=%s', status.playerState);
+                        });
 
-                    player.load(message, { autoplay: true }, error => {
-                        if (error)
-                            console.error(error);
-
-                        resolve();
-                    });
+                        player.load(message, { autoplay: true }, error => {
+                            if (error) reject(error);
+                            else resolve();
+                        });
+                    }
                 });
             });
         });
@@ -74,7 +95,11 @@ export default class Device {
         await this.command((app: Application) => app.stop());
     }
 
-    async status() : Promise<any> {
+    async seek(time: number) : Promise<void> {
+        await this.command((app: Application) => app.seek(time));
+    }
+
+    async status() : Promise<Status> {
         return new Promise((resolve, reject) => {
             const client = new Client();
             client.connect(this.host, () => {
@@ -91,7 +116,8 @@ export default class Device {
                                 reject(error);
 
                             resolve({
-                                time: status.currentTime,
+                                state: status.playerState,
+                                elapsed: status.currentTime,
                                 duration: status.media.duration
                             });
                         });
@@ -102,7 +128,7 @@ export default class Device {
     }
 
     private async command(command: (app: Application) => void) {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const client = new Client();
             client.connect(this.host, () => {
                 client.getSessions((error, sessions) => {
@@ -110,6 +136,7 @@ export default class Device {
                         reject(error);
 
                     client.join(sessions[0], DefaultMediaReceiver, (error, app) => {
+                        console.log(app.pause, app.play, app.seek);
                         if (error)
                             reject(error);
 
