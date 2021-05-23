@@ -10,11 +10,12 @@ const FfmpegCommand = require('fluent-ffmpeg');
 
 // ffmpeg \
 //     -hwaccel nvdec \
-//     -i "/media/movies/2 Fast 2 Furious (2003)/2 Fast 2 Furious (2003).mp4" \
+//     -i "/media/tv/Castlevania/Season 4/S04E10 - It's Been a Strange Ride HDTV-1080p.mkv" \
 //     -vsync 0 \
 //     -acodec libmp3lame \
 //     -c:v h264_nvenc \
 //     -b:v 5M \
+//     -sn
 //     output.mp4
 
 export interface EncodingResult {
@@ -31,12 +32,9 @@ export default class Encoder {
     }
 
     async run(file: File) : Promise<EncodingResult> {
-        const probe = await ffprobe(file.path, { path: 'ffprobe' });
-
-        const [ conversionResult, subtitlesResult ] = await Promise.all([
-            this.convert(file, probe),
-            this.extractSubtitles(file, probe)
-        ]);
+        const probe = await ffprobe(file.path, { path: 'ffprobe' }),
+            subtitlesResult = await this.extractSubtitles(file, probe),
+            conversionResult = await this.convert(file, probe);
 
         return {
             conversion: conversionResult,

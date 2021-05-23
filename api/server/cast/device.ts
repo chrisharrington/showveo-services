@@ -28,6 +28,7 @@ export default class Device {
     name: string;
     type: string;
     host: string;
+    castable: Castable | null;
 
     static fromRaw(raw: any) : Device {
         const device = new Device();
@@ -39,10 +40,15 @@ export default class Device {
     }
 
     async cast(castable: Castable) : Promise<void> {
+        this.castable = castable;
+        
         return new Promise((resolve, reject) => {
             const client = new Client();
 
-            client.on('error', reject);
+            client.on('error', e => {
+                console.log('[api] Client emitted error:');
+                console.error(e);
+            });
 
             client.connect(this.host, () => {
                 client.launch(DefaultMediaReceiver, (error, player) => {
@@ -66,14 +72,20 @@ export default class Device {
                         player.on('error', reject);
 
                         player.on('status', async status => {
+                            if (status.playerState === CastState.Idle)
+                                this.castable = null;
+
                             Socket.broadcast(new Message('status', {
+                                media: this.castable?.name,
                                 state: status.playerState,
                                 elapsed: status.currentTime
                             }));
-                            console.log('status broadcast playerState=%s', status.playerState);
+                            
+                            console.log(`[api] Device status: ${status.playerState}`);
                         });
 
-                        player.load(message, { autoplay: true }, error => {
+                        player.load(message, { autoplay: true }, (error, status) => {
+
                             if (error) reject(error);
                             else resolve();
                         });
@@ -136,7 +148,6 @@ export default class Device {
                         reject(error);
 
                     client.join(sessions[0], DefaultMediaReceiver, (error, app) => {
-                        console.log(app.pause, app.play, app.seek);
                         if (error)
                             reject(error);
 

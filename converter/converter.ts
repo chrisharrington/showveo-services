@@ -31,6 +31,8 @@ export default class Converter {
 
             media.conversionStatus = result.conversion === undefined ? Status.Processed : Status.Failed;
             media.conversionError = result.conversion === undefined ? null : result.conversion as Error;
+            media.subtitlesStatus = result.subtitles === undefined ? Status.Processed : Status.Failed;
+            media.subtitlesError = result.subtitles === undefined ? null : result.subtitles as Error;
             media.path = location;
 
             switch (message.type) {
@@ -38,7 +40,7 @@ export default class Converter {
                     const movie = media as Movie;
                     await MovieService.updateOne(movie);
 
-                    if (!result.subtitles) {
+                    if (media.subtitlesStatus !== Status.Processed) {
                         console.log(`[converter] No subtitles found. Enqueuing movie subtitle request for ${movie.name}.`);
                         this.subtitlerQueue.send(new Message(movie, MessageType.Movie));
                     }
@@ -48,7 +50,7 @@ export default class Converter {
                     const episode = media as Episode;
                     await EpisodeService.updateOne(episode);
 
-                    if (!result.subtitles) {
+                    if (media.subtitlesStatus !== Status.Processed) {
                         console.log(`[converter] No subtitles found. Enqueuing episode subtitle request for ${episode.show}/${episode.season}/${episode.number}.`);
                         this.subtitlerQueue.send(new Message(episode, MessageType.Episode));
                     }
