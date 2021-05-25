@@ -112,11 +112,15 @@ export default class Movies {
                 response.sendStatus(404);
             }
 
+            const subtitles = movie.subtitles || movie.path.replace('.mp4', '.vtt');
+            if (!subtitles || !fs.existsSync(subtitles))
+                response.sendStatus(404);
+
             response.writeHead(200, {
-                'Content-Length': fs.statSync(movie.subtitles).size,
+                'Content-Length': fs.statSync(subtitles).size,
                 'Content-Type': 'text/vvt',
             });
-            fs.createReadStream(movie.subtitles).pipe(response);
+            fs.createReadStream(subtitles).pipe(response);
         } catch (e) {
             console.error(`[api] Request failed: GET /movies/subtitle/:year/:name`);
             console.error(e);

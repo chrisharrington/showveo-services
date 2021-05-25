@@ -7,7 +7,7 @@ import EpisodeService from '@lib/data/episode';
 import ShowService from '@lib/data/show';
 import { Castable, Episode, Movie, Show } from '@lib/models';
 
-import Device from '@api/server/cast/device';
+import { Device } from '@api/server/cast/device';
 import Middlewares from '@api/server/middlewares';
 
 import Base from './base';
@@ -17,10 +17,12 @@ export default class Devices extends Base {
         app.get(prefix + '/devices', Middlewares.auth, this.getDevices.bind(this));
 
         app.post(prefix + '/devices/cast', Middlewares.auth, this.cast.bind(this));
-        app.post(prefix + '/devices/play', Middlewares.auth, this.play.bind(this));
         app.post(prefix + '/devices/pause', Middlewares.auth, this.pause.bind(this));
+        app.post(prefix + '/devices/unpause', Middlewares.auth, this.unpause.bind(this));
         app.post(prefix + '/devices/stop', Middlewares.auth, this.stop.bind(this));
         app.post(prefix + '/devices/seek', Middlewares.auth, this.seek.bind(this));
+        app.post(prefix + '/devices/enable-subtitles', Middlewares.auth, this.enableSubtitles.bind(this));
+        app.post(prefix + '/devices/disable-subtitles', Middlewares.auth, this.disableSubtitles.bind(this));
     }
 
     private static async getDevices(_: Request, response: Response) {
@@ -40,12 +42,12 @@ export default class Devices extends Base {
         this.sendCommand(request, response, 'cast', (device: Device) => device.cast(castable));
     }
 
-    private static async play(request: Request, response: Response) {
-        await this.sendCommand(request, response, 'play', (device: Device) => device.play());
-    }
-
     private static async pause(request: Request, response: Response) {
         await this.sendCommand(request, response, 'pause', (device: Device) => device.pause());
+    }
+
+    private static async unpause(request: Request, response: Response) {
+        await this.sendCommand(request, response, 'unpause', (device: Device) => device.unpause());
     }
 
     private static async stop(request: Request, response: Response) {
@@ -54,6 +56,14 @@ export default class Devices extends Base {
 
     private static async seek(request: Request, response: Response) {
         await this.sendCommand(request, response, 'seek', (device: Device) => device.seek(request.body.time as number));
+    }
+
+    private static async enableSubtitles(request: Request, response: Response ) {
+        await this.sendCommand(request, response, 'stop', (device: Device) => device.subtitles(true));
+    }
+
+    private static async disableSubtitles(request: Request, response: Response ) {
+        await this.sendCommand(request, response, 'stop', (device: Device) => device.subtitles(false));
     }
 
     private static async getDevice(host: string) : Promise<Device> {

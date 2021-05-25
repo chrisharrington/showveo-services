@@ -1,13 +1,13 @@
-import { Client, DefaultMediaReceiver } from 'castv2-client';
-
 import { Castable } from '@lib/models';
 import { Socket, Message } from '@lib/socket';
 
-interface Application {
-    play: () => void;
-    pause: () => void;
-    stop: () => void;
-    seek: (currentTime: number) => void;
+interface RemoteDevice {
+    play: (args: any, callback: (error: Error) => void) => void;
+    pause: (callback: (error: Error) => void) => void;
+    resume: (callback: (error: Error) => void) => void;
+    stop: (callback: (error: Error) => void) => void;
+    seek: (time: number, callback: (error: Error) => void) => void;
+    on: (event: 'status', callback: (status: any) => void) => void;
 }
 
 interface Status {
@@ -23,145 +23,115 @@ enum CastState {
     Buffering = 'BUFFERING'
 }
 
-export default class Device {
+export enum DeviceType {
+    Chromecast = 'chromecast',
+    GoogleHome = 'google-home',
+    NestHub = 'hub',
+    Other = 'other'
+}
+
+export class Device {
     id: string;
     name: string;
-    type: string;
+    type: DeviceType;
     host: string;
     castable: Castable | null;
+    remote: RemoteDevice;
 
-    static fromRaw(raw: any) : Device {
+    static fromRaw(remote: any) : Device {
         const device = new Device();
-        device.id = raw.txtRecord.id;
-        device.name = raw.txtRecord.fn;
-        device.type = raw.txtRecord.md;
-        device.host = raw.host;
+
+        Object.defineProperty(device, 'remote', {value: 'static', writable: true});
+
+        device.id = remote.name;
+        device.name = remote.friendlyName;
+        device.host = remote.host;
+        device.remote = remote;
+
+        if (remote.name.startsWith('Chromecast'))
+            device.type = DeviceType.Chromecast;
+        else if (remote.name.startsWith('Google-Nest-Hub'))
+            device.type = DeviceType.NestHub;
+        else if (remote.name.startsWith('Google-Home'))
+            device.type = DeviceType.GoogleHome;
+        else
+            device.type = DeviceType.Other;
+
+        device.remote.on('status', status => {
+            Socket.broadcast(new Message('status', {
+                device: device.id,
+                media: device.castable?.name,
+                state: status.playerState,
+                elapsed: status.currentTime
+            }));
+        });
+
         return device;
     }
 
     async cast(castable: Castable) : Promise<void> {
         this.castable = castable;
-        
+
         return new Promise((resolve, reject) => {
-            const client = new Client();
-
-            client.on('error', e => {
-                console.log('[api] Client emitted error:');
-                console.error(e);
-            });
-
-            client.connect(this.host, () => {
-                client.launch(DefaultMediaReceiver, (error, player) => {
-                    if (error)
-                        reject(error);
-                    else {
-                        const message = {
-                            contentId: castable.url,
-                            contentType: 'video/mp4',
-                            streamType: 'BUFFERED',
-                            metadata: {
-                                type: 0,
-                                metadataType: 0,
-                                title: castable.name, 
-                                images: [
-                                    { url: castable.backdrop }
-                                ]
-                            }
-                        };
-
-                        player.on('error', reject);
-
-                        player.on('status', async status => {
-                            if (status.playerState === CastState.Idle)
-                                this.castable = null;
-
-                            Socket.broadcast(new Message('status', {
-                                media: this.castable?.name,
-                                state: status.playerState,
-                                elapsed: status.currentTime
-                            }));
-                            
-                            console.log(`[api] Device status: ${status.playerState}`);
-                        });
-
-                        player.load(message, { autoplay: true }, (error, status) => {
-
-                            if (error) reject(error);
-                            else resolve();
-                        });
+            this.remote.play({
+                url: castable.url,
+                cover: {
+                    title: castable.name,
+                    url: castable.backdrop
+                },
+                subtitles: [
+                    {
+                        language: 'en-US',
+                        url: castable.subtitles,
+                        name: 'English'
                     }
-                });
+                ]
+            }, error => {
+                if (error) reject(error);
+                resolve();
             });
         });
     }
 
     async pause() : Promise<void> {
-        await this.command((app: Application) => app.pause());
-    }
-
-    async play() : Promise<void> {
-        await this.command((app: Application) => app.play());
-    }
-
-    async stop() : Promise<void> {
-        await this.command((app: Application) => app.stop());
-    }
-
-    async seek(time: number) : Promise<void> {
-        await this.command((app: Application) => app.seek(time));
-    }
-
-    async status() : Promise<Status> {
         return new Promise((resolve, reject) => {
-            const client = new Client();
-            client.connect(this.host, () => {
-                client.getSessions((error, sessions) => {
-                    if (error)
-                        reject(error);
-
-                    client.join(sessions[0], DefaultMediaReceiver, (error, app) => {
-                        if (error)
-                            reject(error);
-
-                        app.getStatus((error, status) => {
-                            if (error)
-                                reject(error);
-
-                            resolve({
-                                state: status.playerState,
-                                elapsed: status.currentTime,
-                                duration: status.media.duration
-                            });
-                        });
-                    });
-                });
+            this.remote.pause(error => {
+                if (error) reject(error);
+                resolve();
             });
         });
     }
 
-    private async command(command: (app: Application) => void) {
-        return new Promise<void>((resolve, reject) => {
-            const client = new Client();
-            client.connect(this.host, () => {
-                client.getSessions((error, sessions) => {
-                    if (error)
-                        reject(error);
-
-                    client.join(sessions[0], DefaultMediaReceiver, (error, app) => {
-                        if (error)
-                            reject(error);
-
-                        if (!app.media.currentSession){
-                            app.getStatus(() => {
-                                command(app);
-                            });
-                        } else
-                            command(app);
-
-                        resolve();                    
-                    });
-                });
+    async unpause() : Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.remote.resume(error => {
+                if (error) reject(error);
+                resolve();
             });
+        });
+    }
+
+    async stop() : Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.remote.stop(error => {
+                if (error) reject(error);
+                resolve();
+            });
+        });
+    }
+
+    async seek(time: number) : Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.remote.seek(time, error => {
+                if (error) reject(error);
+                resolve();
+            });
+        });
+    }
+
+    async subtitles(enable: boolean) : Promise<void> {
+        return new Promise((resolve, reject) => {
+            resolve();
         });
     }
 }

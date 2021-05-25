@@ -84,13 +84,13 @@ export class MovieIndexer {
 
             if (movie.metadataStatus === Status.Unprocessed) {
                 movie.metadataStatus = Status.Queued;
-                console.log(`[movie-indexer] Enqueuing metadata request for ${movie.name}.`);
+                console.log(`[movie-indexer] Enqueuing metadata request for ${movie}.`);
                 this.metadataQueue.send(new Message(movie, MessageType.Movie));
             }
 
             if (movie.conversionStatus === Status.Unprocessed) {
                 movie.conversionStatus = Status.Queued;
-                console.log(`[movie-indexer] Enqueuing conversion request for ${movie.name}.`);
+                console.log(`[movie-indexer] Enqueuing conversion request for ${movie}.`);
                 this.conversionQueue.send(new Message(movie, MessageType.Movie));
             }
 

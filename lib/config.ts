@@ -23,6 +23,7 @@ export default class Config {
     static imagePath: string = '/data/images/';
 
     static playMovieUrl: string = 'https://api.showveo.com/data/movies/play/{year}/{name}';
+    static subtitlesMovieUrl: string = 'https://api.showveo.com/data/movies/subtitle/{year}/{name}';
 
     static streamDelay: number = 1000;
 }

@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 
 import Queue from '@lib/queue';
 import { File, Message, MessageType, Movie, Status, Media, Episode } from '@lib/models';
@@ -33,17 +34,28 @@ export default class Converter {
             media.conversionError = result.conversion === undefined ? null : result.conversion as Error;
             media.subtitlesStatus = result.subtitles === undefined ? Status.Processed : Status.Failed;
             media.subtitlesError = result.subtitles === undefined ? null : result.subtitles as Error;
+            media.subtitles = result.subtitles === undefined ? null : location.replace('.mp4', '.vtt');
             media.path = location;
 
             switch (message.type) {
                 case MessageType.Movie:
                     const movie = media as Movie;
-                    await MovieService.updateOne(movie);
-
-                    if (media.subtitlesStatus !== Status.Processed) {
-                        console.log(`[converter] No subtitles found. Enqueuing movie subtitle request for ${movie.name}.`);
-                        this.subtitlerQueue.send(new Message(movie, MessageType.Movie));
+                    if (movie.subtitlesStatus === Status.Unprocessed) {
+                        const subtitlesPath = movie.path.replace('.mp4', '.vtt');
+                        if (movie.subtitles === null) {
+                            if (fs.existsSync(subtitlesPath)) {
+                                movie.subtitles = subtitlesPath;
+                                movie.subtitlesStatus = Status.Processed;
+                                console.log(`[converter] Found local subtitles. Path updated for ${movie}.`);
+                            } else {
+                                movie.subtitlesStatus = Status.Queued;
+                                this.subtitlerQueue.send(new Message(movie, MessageType.Movie));
+                                console.log(`[converter] No local subtitles. Enqueuing subtitle retrieval request for ${movie}`);
+                            }
+                        }
                     }
+
+                    await MovieService.updateOne(movie);
 
                     break;
                 case MessageType.Episode:
