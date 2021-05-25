@@ -7,6 +7,8 @@ interface RemoteDevice {
     resume: (callback: (error: Error) => void) => void;
     stop: (callback: (error: Error) => void) => void;
     seek: (time: number, callback: (error: Error) => void) => void;
+    changeSubtitles: (index: number, callback: (error: Error) => void) => void;
+    subtitlesOff: (callback: (error: Error) => void) => void;
     on: (event: 'status', callback: (status: any) => void) => void;
 }
 
@@ -73,20 +75,37 @@ export class Device {
         this.castable = castable;
 
         return new Promise((resolve, reject) => {
-            this.remote.play({
-                url: castable.url,
-                cover: {
-                    title: castable.name,
-                    url: castable.backdrop
-                },
+            const options = {
+                url : castable.url,
                 subtitles: [
                     {
                         language: 'en-US',
                         url: castable.subtitles,
                         name: 'English'
                     }
-                ]
-            }, error => {
+                ],
+                cover: {
+                    title: castable.name,
+                    url: castable.backdrop
+                }
+            };
+
+            // const options = {
+            //     url: castable.url,
+            //     cover: {
+            //         title: castable.name,
+            //         url: castable.backdrop
+            //     },
+            //     subtitles: [
+            //         {
+            //             language: 'en-US',
+            //             url: castable.subtitles,
+            //             name: 'English'
+            //         }
+            //     ]
+            // }
+
+            this.remote.play(options, error => {
                 if (error) reject(error);
                 resolve();
             });
@@ -131,7 +150,16 @@ export class Device {
 
     async subtitles(enable: boolean) : Promise<void> {
         return new Promise((resolve, reject) => {
-            resolve();
+            if (enable)
+                this.remote.changeSubtitles(0, error => {
+                    if (error) reject(error);
+                    else resolve();
+                })
+            else
+                this.remote.subtitlesOff(error => {
+                    if (error) reject(error);
+                    else resolve();
+                });
         });
     }
 }

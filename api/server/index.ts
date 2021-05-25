@@ -28,7 +28,7 @@ export default class Server {
         const app = express(),
             server = http.createServer(app);
 
-        app.use(cors({ origin: 'https://www.showveo.com', credentials: true }));
+        app.use(cors({ origin: '*', credentials: true }));
         // app.use(this.authorize);
         app.use(bodyParser.json());
         app.use(cookieParser()); 

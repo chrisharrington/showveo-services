@@ -59,11 +59,11 @@ export default class Devices extends Base {
     }
 
     private static async enableSubtitles(request: Request, response: Response ) {
-        await this.sendCommand(request, response, 'stop', (device: Device) => device.subtitles(true));
+        await this.sendCommand(request, response, 'enable-subtitles', (device: Device) => device.subtitles(true));
     }
 
     private static async disableSubtitles(request: Request, response: Response ) {
-        await this.sendCommand(request, response, 'stop', (device: Device) => device.subtitles(false));
+        await this.sendCommand(request, response, 'disable-subtitles', (device: Device) => device.subtitles(false));
     }
 
     private static async getDevice(host: string) : Promise<Device> {
