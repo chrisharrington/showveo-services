@@ -9,20 +9,22 @@ interface RemoteDevice {
     seek: (time: number, callback: (error: Error) => void) => void;
     changeSubtitles: (index: number, callback: (error: Error) => void) => void;
     subtitlesOff: (callback: (error: Error) => void) => void;
-    on: (event: 'status', callback: (status: any) => void) => void;
+    on: (event: 'status' | 'finished', callback: (status: any) => void) => void;
 }
 
-interface Status {
+interface DeviceStatusMessage {
+    device: string;
+    media: string | null;
     state: CastState;
     elapsed: number;
-    duration: number;
 }
 
 enum CastState {
     Idle = 'IDLE',
     Paused = 'PAUSED',
     Playing = 'PLAYING',
-    Buffering = 'BUFFERING'
+    Buffering = 'BUFFERING',
+    Finished = 'FINISHED'
 }
 
 export enum DeviceType {
@@ -37,7 +39,7 @@ export class Device {
     name: string;
     type: DeviceType;
     host: string;
-    castable: Castable | null;
+    media: string | null;
     remote: RemoteDevice;
 
     static fromRaw(remote: any) : Device {
@@ -60,11 +62,27 @@ export class Device {
             device.type = DeviceType.Other;
 
         device.remote.on('status', status => {
-            Socket.broadcast(new Message('status', {
+            console.log(status);
+            
+            if (status === CastState.Idle)
+                device.media = null;
+            if (status === CastState.Paused)
+                setTimeout(() => device.stop(), 5000);
+
+            Socket.broadcast(new Message<DeviceStatusMessage>('status', {
                 device: device.id,
-                media: device.castable?.name,
-                state: status.playerState,
+                media: device.media,
+                state: status.playerState === CastState.Idle && status.idleReason === 'CANCELLED' ? CastState.Finished : status.playerState,
                 elapsed: status.currentTime
+            }));
+        });
+
+        device.remote.on('finished', () => {
+            Socket.broadcast(new Message<DeviceStatusMessage>('status', {
+                device: device.id,
+                media: device.media,
+                state: CastState.Finished,
+                elapsed: 0
             }));
         });
 
@@ -72,7 +90,7 @@ export class Device {
     }
 
     async cast(castable: Castable) : Promise<void> {
-        this.castable = castable;
+        this.media = castable?.name;
 
         return new Promise((resolve, reject) => {
             const options = {
@@ -90,21 +108,6 @@ export class Device {
                 }
             };
 
-            // const options = {
-            //     url: castable.url,
-            //     cover: {
-            //         title: castable.name,
-            //         url: castable.backdrop
-            //     },
-            //     subtitles: [
-            //         {
-            //             language: 'en-US',
-            //             url: castable.subtitles,
-            //             name: 'English'
-            //         }
-            //     ]
-            // }
-
             this.remote.play(options, error => {
                 if (error) reject(error);
                 resolve();
@@ -116,6 +119,8 @@ export class Device {
         return new Promise((resolve, reject) => {
             this.remote.pause(error => {
                 if (error) reject(error);
+
+
                 resolve();
             });
         });

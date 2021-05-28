@@ -3,8 +3,8 @@ import { Express, Request, Response } from 'express';
 import Movies from '@lib/data/movie';
 import { Castable } from '@lib/models';
 
-import Cast from '@api/server/cast';
-import Device from '@api/server/cast/device';
+import Cast from '@api/cast';
+import Device from '@api/cast/device';
 
 const stringSimilarity = require('string-similarity');
 

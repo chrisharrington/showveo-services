@@ -1,10 +1,10 @@
 import { Server } from 'socket.io';
 
-export class Message {
+export class Message<TMessage> {
     name: string;
-    payload: any;
+    payload: TMessage;
 
-    constructor(name: string, payload: any) {
+    constructor(name: string, payload: TMessage) {
         this.name = name;
         this.payload = payload;
     }
@@ -17,7 +17,7 @@ export class Socket {
         this.server = server;
     }
 
-    static broadcast(message: Message) {
+    static broadcast<TMessage>(message: Message<TMessage>) {
         this.server.emit(message.name, message.payload);
     }
 }

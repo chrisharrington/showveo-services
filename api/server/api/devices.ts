@@ -1,13 +1,13 @@
 import { Application, Request, Response } from 'express';
 
-import Cast from '@api/server/cast';
+import Cast from '@api/cast';
+import { Device } from '@api/cast/device';
 
 import MovieService from '@lib/data/movie';
 import EpisodeService from '@lib/data/episode';
 import ShowService from '@lib/data/show';
 import { Castable, Episode, Movie, Show } from '@lib/models';
 
-import { Device } from '@api/server/cast/device';
 import Middlewares from '@api/server/middlewares';
 
 import Base from './base';

@@ -14,8 +14,6 @@ import Movies from './api/movies';
 import Shows from './api/shows';
 import Devices from './api/devices';
 import Auth from './api/auth';
-import Cast from './cast';
-
 
 export default class Server {
     private port: number;
@@ -44,7 +42,6 @@ export default class Server {
         Devices.initialize(app, prefix);
         Auth.initialize(app, prefix);
 
-        Cast.initialize();
         Socket.initialize(new SocketServer(server));
     }
 
