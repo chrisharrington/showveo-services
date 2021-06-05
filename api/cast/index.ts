@@ -1,5 +1,7 @@
 import ChromecastApi from 'chromecast-api';
 
+import { RemoteSocket, MessageType, MessageResponse, MessageRequest } from '@root/lib/socket';
+
 import { Device } from './device';
 
 interface DeviceMap {
@@ -18,11 +20,14 @@ export default class Cast {
 
         const client = new ChromecastApi();
 
-        client.on('device', raw => {
+        client.on('device', async raw => {
             const device = Device.fromRaw(raw);
 
             console.log(`[api] Device found: ${device.name}`);
             this.deviceMap[device.host] = device;
+
+            const devices = await this.devices();
+            RemoteSocket.broadcast(MessageType.GetDevicesResponse, MessageResponse.success<{ devices: Device[] }>({ devices }));
         });
     }
 

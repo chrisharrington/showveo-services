@@ -1,22 +1,16 @@
 import { Castable } from '@lib/models';
-import { Socket, Message } from '@lib/socket';
+import { MessageResponse, MessageType, RemoteSocket } from '@root/lib/socket';
 
 interface RemoteDevice {
     play: (args: any, callback: (error: Error) => void) => void;
     pause: (callback: (error: Error) => void) => void;
     resume: (callback: (error: Error) => void) => void;
     stop: (callback: (error: Error) => void) => void;
-    seek: (time: number, callback: (error: Error) => void) => void;
+    seek: (increment: number, callback: (error: Error) => void) => void;
+    seekTo: (time: number, callback: (error: Error) => void) => void;
     changeSubtitles: (index: number, callback: (error: Error) => void) => void;
     subtitlesOff: (callback: (error: Error) => void) => void;
     on: (event: 'status' | 'finished', callback: (status: any) => void) => void;
-}
-
-interface DeviceStatusMessage {
-    device: string;
-    media: string | null;
-    state: CastState;
-    elapsed: number;
 }
 
 enum CastState {
@@ -62,14 +56,12 @@ export class Device {
             device.type = DeviceType.Other;
 
         device.remote.on('status', status => {
-            console.log(status);
-            
-            if (status === CastState.Idle)
-                device.media = null;
-            if (status === CastState.Paused)
-                setTimeout(() => device.stop(), 5000);
+            // if (status === CastState.Idle)
+            //     device.media = null;
+            // if (status === CastState.Paused)
+            //     setTimeout(() => device.stop(), 5000);
 
-            Socket.broadcast(new Message<DeviceStatusMessage>('status', {
+            RemoteSocket.broadcast(MessageType.DeviceStatusResponse, MessageResponse.success({
                 device: device.id,
                 media: device.media,
                 state: status.playerState === CastState.Idle && status.idleReason === 'CANCELLED' ? CastState.Finished : status.playerState,
@@ -78,7 +70,7 @@ export class Device {
         });
 
         device.remote.on('finished', () => {
-            Socket.broadcast(new Message<DeviceStatusMessage>('status', {
+            RemoteSocket.broadcast(MessageType.DeviceStatusResponse, MessageResponse.success({
                 device: device.id,
                 media: device.media,
                 state: CastState.Finished,
@@ -146,7 +138,18 @@ export class Device {
 
     async seek(time: number) : Promise<void> {
         return new Promise((resolve, reject) => {
+            console.log(time);
             this.remote.seek(time, error => {
+                if (error) reject(error);
+                resolve();
+            });
+        });
+    }
+
+    async seekTo(time: number) : Promise<void> {
+        return new Promise((resolve, reject) => {
+            console.log(time);
+            this.remote.seekTo(time, error => {
                 if (error) reject(error);
                 resolve();
             });

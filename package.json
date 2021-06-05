@@ -19,7 +19,8 @@
     "metadata:logs": "docker-compose logs -f --tail 100 metadata",
     "subtitler": "./node_modules/.bin/tsc && node subtitler/app.js",
     "subtitler:dev": "./node_modules/.bin/nodemon --watch './**/*.ts' --exec './node_modules/.bin/ts-node' subtitler/app.ts",
-    "subtitler:logs": "docker-compose logs -f --tail 100 subtitler"
+    "subtitler:logs": "docker-compose logs -f --tail 100 subtitler",
+    "transpiler:logs": "docker-compose logs -f --tail 100 transpiler"
   },
   "repository": {
     "type": "git",

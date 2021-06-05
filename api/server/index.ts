@@ -6,14 +6,17 @@ import * as http from 'http';
 import { Server as SocketServer } from 'socket.io';
 
 import Config from '@lib/config';
-import { Socket } from '@lib/socket';
+import { RemoteSocket } from '@lib/socket';
 
 import Chat from './chat';
 import Webhook from './webhook';
-import Movies from './api/movies';
+// import Movies from './api/movies';
 import Shows from './api/shows';
-import Devices from './api/devices';
+// import Devices from './api/devices';
 import Auth from './api/auth';
+
+import Devices from './api/devices/index';
+import Movies from './api/movies/index';
 
 export default class Server {
     private port: number;
@@ -30,19 +33,21 @@ export default class Server {
         // app.use(this.authorize);
         app.use(bodyParser.json());
         app.use(cookieParser()); 
-        
-        server.listen(this.port, () => console.log(`[api] Listening on port ${this.port}...`));
+         
+        const io = server.listen(this.port, () => console.log(`[api] Listening on port ${this.port}...`));
 
         new Chat().initialize(app);
         new Webhook().initialize(app);
 
         const prefix = '/data';
-        Movies.initialize(app, prefix);
+        // Movies.initialize(app, prefix);
         Shows.initialize(app, prefix);
-        Devices.initialize(app, prefix);
+        // Devices.initialize(app, prefix);
         Auth.initialize(app, prefix);
 
-        Socket.initialize(new SocketServer(server));
+        RemoteSocket.initialize(new SocketServer(server), io);
+        Devices.initialize();
+        Movies.initialize(app, prefix);
     }
 
     private authorize(request: express.Request, response: express.Response, next: () => void) {
