@@ -54,7 +54,7 @@
     "dayjs": "^1.8.18",
     "delay-stream": "^0.0.3",
     "dialogflow-fulfillment": "^0.6.1",
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
     "get-video-duration": "^3.0.0-beta.1",
